@@ -5,9 +5,9 @@ import json
 from datetime import datetime
 from anthropic import Anthropic
 from typing import Dict
-from backend.config import settings
-from backend.models.workstream import Milestone, Workstream
-from backend.models.update import JiraUpdate, MilestoneUpdate, RecentChange
+from config import settings
+from models.workstream import Milestone, Workstream
+from models.update import JiraUpdate, MilestoneUpdate, RecentChange
 
 
 # System prompt for Claude

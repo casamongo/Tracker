@@ -3,7 +3,7 @@ Main FastAPI application entry point.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import workstreams_router, updates_router, post_router
+from routers import workstreams_router, updates_router, post_router
 
 # Create FastAPI app
 app = FastAPI(

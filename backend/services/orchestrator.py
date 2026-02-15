@@ -2,11 +2,11 @@
 Orchestrator service for coordinating the end-to-end workflow.
 """
 from typing import List, Dict
-from backend.models.workstream import Workstream, Milestone
-from backend.models.update import MilestoneUpdate
-from backend.services.sheet_reader import get_sheet_reader
-from backend.services.doc_reader import get_doc_reader
-from backend.services.ai_engine import get_ai_engine
+from models.workstream import Workstream, Milestone
+from models.update import MilestoneUpdate
+from services.sheet_reader import get_sheet_reader
+from services.doc_reader import get_doc_reader
+from services.ai_engine import get_ai_engine
 
 
 class Orchestrator:

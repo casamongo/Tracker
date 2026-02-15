@@ -4,7 +4,7 @@ Handles writing comments back to the tracking sheet.
 """
 import gspread
 from google.oauth2.service_account import Credentials
-from backend.config import settings
+from config import settings
 
 
 # Google API scopes

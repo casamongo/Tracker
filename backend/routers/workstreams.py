@@ -2,8 +2,8 @@
 API router for workstream-related endpoints.
 """
 from fastapi import APIRouter, HTTPException
-from backend.models.workstream import WorkstreamsResponse
-from backend.services.sheet_reader import get_sheet_reader
+from models.workstream import WorkstreamsResponse
+from services.sheet_reader import get_sheet_reader
 
 router = APIRouter(prefix="/api", tags=["workstreams"])
 

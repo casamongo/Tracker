@@ -3,8 +3,8 @@ Jira client service for posting updates to Jira tickets.
 """
 from jira import JIRA
 from typing import Dict, List
-from backend.config import settings
-from backend.models.update import JiraUpdate, RecentChange
+from config import settings
+from models.update import JiraUpdate, RecentChange
 
 
 class JiraClient:

@@ -7,8 +7,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from typing import List, Dict, Optional
-from backend.config import settings
-from backend.models.workstream import Workstream, Milestone
+from config import settings
+from models.workstream import Workstream, Milestone
 
 
 # Google API scopes

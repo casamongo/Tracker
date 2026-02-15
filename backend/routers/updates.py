@@ -2,9 +2,9 @@
 API router for update generation endpoints.
 """
 from fastapi import APIRouter, HTTPException
-from backend.models.update import GenerateUpdatesRequest, GenerateUpdatesResponse
-from backend.services.sheet_reader import get_sheet_reader
-from backend.services.orchestrator import get_orchestrator
+from models.update import GenerateUpdatesRequest, GenerateUpdatesResponse
+from services.sheet_reader import get_sheet_reader
+from services.orchestrator import get_orchestrator
 
 router = APIRouter(prefix="/api", tags=["updates"])
 

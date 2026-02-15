@@ -2,9 +2,9 @@
 API router for posting updates to Jira and Sheet.
 """
 from fastapi import APIRouter, HTTPException
-from backend.models.update import PostToJiraRequest, PostToSheetRequest
-from backend.services.jira_client import get_jira_client
-from backend.services.sheet_writer import get_sheet_writer
+from models.update import PostToJiraRequest, PostToSheetRequest
+from services.jira_client import get_jira_client
+from services.sheet_writer import get_sheet_writer
 
 router = APIRouter(prefix="/api", tags=["post"])
 

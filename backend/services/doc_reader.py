@@ -6,7 +6,7 @@ import re
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from typing import Optional
-from backend.config import settings
+from config import settings
 
 
 # Google API scopes
