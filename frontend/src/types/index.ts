@@ -69,3 +69,14 @@ export interface PostToSheetRequest {
   row_index: number;
   comment: string;
 }
+
+// Helper function to get Jira base URL
+// Default to a placeholder that users should configure
+export const getJiraBaseUrl = (): string => {
+  return import.meta.env.VITE_JIRA_BASE_URL || 'https://yourorg.atlassian.net';
+};
+
+// Helper to construct Jira ticket URL
+export const getJiraTicketUrl = (ticketId: string): string => {
+  return `${getJiraBaseUrl()}/browse/${ticketId}`;
+};

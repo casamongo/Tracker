@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { X, ExternalLink, Loader2 } from 'lucide-react';
 import type { MilestoneUpdate } from '@/types';
+import { getJiraTicketUrl } from '@/types';
 import { apiClient } from '@/api/client';
 
 interface PreviewModalProps {
@@ -172,7 +173,7 @@ ${editedJiraUpdate.next_steps.split('\n').map((line) => `- ${line}`).join('\n')}
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <a
-            href={`https://yourorg.atlassian.net/browse/${update.jira_id}`}
+            href={getJiraTicketUrl(update.jira_id)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-sm"

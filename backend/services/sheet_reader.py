@@ -94,9 +94,9 @@ class SheetReader:
             URL string if hyperlink exists, None otherwise
         """
         try:
-            # Convert column index to A1 notation
-            col_letter = chr(65 + col_idx) if col_idx < 26 else chr(65 + col_idx // 26 - 1) + chr(65 + col_idx % 26)
-            range_name = f"{col_letter}{row_idx + 1}"
+            # Convert column index to A1 notation using gspread's utility
+            from gspread.utils import rowcol_to_a1
+            range_name = rowcol_to_a1(row_idx + 1, col_idx + 1)
             
             result = self.sheets_service.spreadsheets().get(
                 spreadsheetId=sheet_id,

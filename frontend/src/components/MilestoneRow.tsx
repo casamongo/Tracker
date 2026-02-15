@@ -3,6 +3,7 @@
  */
 import { FileText, ExternalLink } from 'lucide-react';
 import type { Milestone } from '@/types';
+import { getJiraTicketUrl } from '@/types';
 import { StatusBadge } from './StatusBadge';
 
 interface MilestoneRowProps {
@@ -24,7 +25,7 @@ export const MilestoneRow = ({ milestone, isEven, onPreview }: MilestoneRowProps
       <td className="px-4 py-3 text-sm">
         {milestone.jira_id && (
           <a
-            href={`https://yourorg.atlassian.net/browse/${milestone.jira_id}`}
+            href={getJiraTicketUrl(milestone.jira_id)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"

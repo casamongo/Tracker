@@ -15,9 +15,17 @@ export const ConfigPage = () => {
   });
 
   const handleSave = () => {
-    // In a real implementation, this would save to backend
-    console.log('Saving config:', config);
-    alert('Configuration saved! (Note: This is a demo - config is not persisted)');
+    // This is a demo UI - actual configuration is done via .env file
+    console.log('Configuration values (for reference only):', config);
+    alert(
+      'ℹ️ Configuration Interface\n\n' +
+      'This page is for demonstration purposes.\n\n' +
+      'To configure the application, edit the .env file on the server:\n' +
+      '1. Copy .env.example to .env\n' +
+      '2. Fill in your credentials\n' +
+      '3. Restart the application\n\n' +
+      'See DEPLOYMENT.md for detailed instructions.'
+    );
   };
 
   return (
@@ -27,6 +35,11 @@ export const ConfigPage = () => {
         <p className="text-gray-600 mt-1">
           Configure API credentials and settings for the automation workflow
         </p>
+        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-800">
+            ℹ️ <strong>Note:</strong> This is a reference interface. Actual configuration must be done via the <code className="bg-yellow-100 px-1 rounded">.env</code> file.
+          </p>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
