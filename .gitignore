@@ -29,6 +29,7 @@ env/
 # Environment variables
 .env
 .env.local
+backend/.env
 
 # IDEs
 .vscode/
@@ -73,3 +74,6 @@ htmlcov/
 # Temporary files
 /tmp/
 *.tmp
+
+# Scripts output
+*.pid
