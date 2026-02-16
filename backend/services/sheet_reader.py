@@ -34,8 +34,11 @@ class SheetReader:
         """
         Parse a workstream header row.
         
-        Format: "Workstream: 5. Config Visibility | PM: Syed Sarjeel Yusuf | 
+        Supports two formats:
+        1. Old: "Workstream: 5. Config Visibility | PM: Syed Sarjeel Yusuf | 
                  Eng: Mark Spicer | Design: N/A | Target: Q4 | Status: 🟢 | Q4O1"
+        2. New: "1. Workload Selection | PM: Syed Sarjeel Yusuf Eng: Nati Tsechanski  
+                 Design: Rani Zhu  | Target: Q1 | Status: 🟢"
         
         Args:
             row_text: Text from the workstream header cell
@@ -43,20 +46,26 @@ class SheetReader:
         Returns:
             Dictionary with parsed workstream metadata, or None if parsing fails
         """
-        # Extract workstream number and name
+        # Try old format first (with "Workstream:" prefix)
         ws_match = re.search(r'Workstream:\s*(\d+)\.\s*([^|]+)', row_text)
-        if not ws_match:
-            return None
+        if ws_match:
+            ws_num = ws_match.group(1)
+            ws_name = ws_match.group(2).strip()
+        else:
+            # Try new format (without "Workstream:" prefix)
+            ws_match = re.search(r'^(\d+)\.\s*([^|]+)', row_text)
+            if not ws_match:
+                return None
+            ws_num = ws_match.group(1)
+            ws_name = ws_match.group(2).strip()
         
-        ws_num = ws_match.group(1)
-        ws_name = ws_match.group(2).strip()
-        
-        # Extract other fields
-        pm_match = re.search(r'PM:\s*([^|]+)', row_text)
-        eng_match = re.search(r'Eng:\s*([^|]+)', row_text)
-        design_match = re.search(r'Design:\s*([^|]+)', row_text)
-        target_match = re.search(r'Target:\s*([^|]+)', row_text)
-        status_match = re.search(r'Status:\s*([^|]+)', row_text)
+        # Extract other fields - handle both pipe-separated and space-separated
+        # For PM, Eng, Design: match until we hit the next field keyword or pipe
+        pm_match = re.search(r'PM:\s*([^|]*?)(?:\s+Eng:|\s+Design:|\s+Target:|\||$)', row_text)
+        eng_match = re.search(r'Eng:\s*([^|]*?)(?:\s+Design:|\s+Target:|\s+Status:|\||$)', row_text)
+        design_match = re.search(r'Design:\s*([^|]*?)(?:\s+Target:|\s+Status:|\||$)', row_text)
+        target_match = re.search(r'Target:\s*([^|]*?)(?:\s+Status:|\||$)', row_text)
+        status_match = re.search(r'Status:\s*([^|]+?)(?:\||$)', row_text)
         okr_match = re.search(r'\|\s*([A-Z0-9]+)\s*$', row_text)
         
         # Determine status color from emoji
@@ -129,6 +138,13 @@ class SheetReader:
         """
         Parse the Google Sheet and return workstream hierarchy.
         
+        Supports dynamic hierarchy detection based on Column A values:
+        - Column A = "Workstream" → Start new workstream
+        - Column A = "Track" → Track row (for grouping, not parsed)
+        - Column A = "Milestone" → Add milestone to current workstream
+        
+        Also supports legacy format where Column A is empty and Column B has "Workstream:"
+        
         Returns:
             List of Workstream objects with nested milestones
         """
@@ -147,21 +163,49 @@ class SheetReader:
             if not any(row):
                 continue
             
-            # Detect workstream header: column A is empty and column B contains "Workstream:"
-            if len(row) > 1 and row[0] == "" and "Workstream:" in str(row[1]):
+            # Get column A value
+            col_a = row[0].strip() if len(row) > 0 else ""
+            
+            # Detect workstream by Column A = "Workstream"
+            if col_a == "Workstream" and len(row) > 1:
                 ws_data = self.parse_workstream_header(row[1])
                 if ws_data:
                     current_ws = Workstream(**ws_data, milestones=[])
                     workstreams.append(current_ws)
             
+            # Legacy format: column A is empty and column B contains "Workstream:"
+            elif col_a == "" and len(row) > 1 and "Workstream:" in str(row[1]):
+                ws_data = self.parse_workstream_header(row[1])
+                if ws_data:
+                    current_ws = Workstream(**ws_data, milestones=[])
+                    workstreams.append(current_ws)
+            
+            # Detect track row: Column A = "Track" (for grouping, not parsed)
+            elif col_a == "Track":
+                # Track rows are just for visual grouping, skip them
+                continue
+            
             # Detect milestone row: column A = "Milestone"
-            elif len(row) > 7 and row[0] == "Milestone" and current_ws is not None:
-                # Extract notes link from column Q (index 16)
+            elif col_a == "Milestone" and current_ws is not None:
+                # Extract notes link - try column G (index 6) first for new structure
                 notes_link = None
                 notes_doc_id = None
-                if len(row) > 16 and row[16]:
+                
+                # Try column G first (new structure)
+                if len(row) > 6 and row[6]:
+                    # Check if cell has hyperlink
+                    hyperlink = self.extract_hyperlink(settings.google_sheet_id, row_idx, 6)
+                    if hyperlink:
+                        notes_link = hyperlink
+                        notes_doc_id = self.extract_doc_id_from_url(notes_link)
+                    # If no hyperlink but text says "Notes", it might be a label
+                    elif row[6].strip().lower() != "notes":
+                        notes_link = row[6]
+                        notes_doc_id = self.extract_doc_id_from_url(notes_link)
+                
+                # Fall back to column Q (index 16) for legacy structure
+                if not notes_link and len(row) > 16 and row[16]:
                     notes_link = row[16]
-                    # Try to get hyperlink if cell has one
                     hyperlink = self.extract_hyperlink(settings.google_sheet_id, row_idx, 16)
                     if hyperlink:
                         notes_link = hyperlink
@@ -174,8 +218,8 @@ class SheetReader:
                     target_date=row[3] if len(row) > 3 else "",
                     owner=row[4] if len(row) > 4 else "",
                     jira_id=row[5] if len(row) > 5 else "",
-                    comments=row[6] if len(row) > 6 else "",
-                    slack_channel=row[7] if len(row) > 7 else "",
+                    comments=row[8] if len(row) > 8 else "",  # Column I (index 8) for new structure
+                    slack_channel=row[7] if len(row) > 7 else "",  # Column H
                     notes_link=notes_link,
                     notes_doc_id=notes_doc_id
                 )
