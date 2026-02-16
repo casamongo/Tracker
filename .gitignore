@@ -77,3 +77,4 @@ htmlcov/
 
 # Scripts output
 *.pid
+backend/config/*.json
