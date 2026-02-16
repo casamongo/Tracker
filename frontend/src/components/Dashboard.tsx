@@ -12,8 +12,7 @@ import type { Milestone, MilestoneUpdate } from '@/types';
 
 export const Dashboard = () => {
   const { data, isLoading, error, refetch } = useWorkstreams();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedMilestone, setSelectedMilestone] = useState<{
+  const [_selectedMilestone, setSelectedMilestone] = useState<{
     milestone: Milestone;
     workstreamId: string;
     index: number;
