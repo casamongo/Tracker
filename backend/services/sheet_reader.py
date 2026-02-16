@@ -216,6 +216,15 @@ class SheetReader:
                         notes_link = hyperlink
                     notes_doc_id = self.extract_doc_id_from_url(notes_link)
                 
+                # Determine comments value with fallback logic
+                # New structure: Column I (index 8) for AI-generated summaries
+                # Legacy structure: Column G (index 6)
+                comments_value = ""
+                if len(row) > 8:
+                    comments_value = row[8]
+                elif len(row) > 6:
+                    comments_value = row[6]
+                
                 milestone = Milestone(
                     row_index=row_idx + 1,  # 1-indexed for gspread
                     track=row[1] if len(row) > 1 else "",
@@ -223,11 +232,7 @@ class SheetReader:
                     target_date=row[3] if len(row) > 3 else "",
                     owner=row[4] if len(row) > 4 else "",
                     jira_id=row[5] if len(row) > 5 else "",
-                    # Comments column mapping:
-                    # - New structure: Column I (index 8) for AI-generated summaries
-                    # - Legacy structure: Column G (index 6)
-                    # We prioritize new structure since that's the target format
-                    comments=row[8] if len(row) > 8 else (row[6] if len(row) > 6 else ""),
+                    comments=comments_value,
                     slack_channel=row[7] if len(row) > 7 else "",  # Column H
                     notes_link=notes_link,
                     notes_doc_id=notes_doc_id
