@@ -17,6 +17,9 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive.readonly'
 ]
 
+# Constants
+NOTES_LABEL = "notes"  # Cell text that indicates a notes column header
+
 
 class SheetReader:
     """Service for reading and parsing Google Sheets data."""
@@ -60,7 +63,9 @@ class SheetReader:
             ws_name = ws_match.group(2).strip()
         
         # Extract other fields - handle both pipe-separated and space-separated
-        # For PM, Eng, Design: match until we hit the next field keyword or pipe
+        # The regex patterns use non-greedy matching (*?) followed by lookaheads (?=...)
+        # to match until the next field keyword (e.g., "Eng:", "Design:") or pipe separator
+        # This allows parsing both "PM: X | Eng: Y" and "PM: X Eng: Y" formats
         pm_match = re.search(r'PM:\s*([^|]*?)(?:\s+Eng:|\s+Design:|\s+Target:|\||$)', row_text)
         eng_match = re.search(r'Eng:\s*([^|]*?)(?:\s+Design:|\s+Target:|\s+Status:|\||$)', row_text)
         design_match = re.search(r'Design:\s*([^|]*?)(?:\s+Target:|\s+Status:|\||$)', row_text)
@@ -198,8 +203,8 @@ class SheetReader:
                     if hyperlink:
                         notes_link = hyperlink
                         notes_doc_id = self.extract_doc_id_from_url(notes_link)
-                    # If no hyperlink but text says "Notes", it might be a label
-                    elif row[6].strip().lower() != "notes":
+                    # If no hyperlink but text says "Notes", it might be a column header label
+                    elif row[6].strip().lower() != NOTES_LABEL:
                         notes_link = row[6]
                         notes_doc_id = self.extract_doc_id_from_url(notes_link)
                 
@@ -218,7 +223,11 @@ class SheetReader:
                     target_date=row[3] if len(row) > 3 else "",
                     owner=row[4] if len(row) > 4 else "",
                     jira_id=row[5] if len(row) > 5 else "",
-                    comments=row[8] if len(row) > 8 else "",  # Column I (index 8) for new structure
+                    # Comments column mapping:
+                    # - New structure: Column I (index 8) for AI-generated summaries
+                    # - Legacy structure: Column G (index 6)
+                    # We prioritize new structure since that's the target format
+                    comments=row[8] if len(row) > 8 else (row[6] if len(row) > 6 else ""),
                     slack_channel=row[7] if len(row) > 7 else "",  # Column H
                     notes_link=notes_link,
                     notes_doc_id=notes_doc_id
