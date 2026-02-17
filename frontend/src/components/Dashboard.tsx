@@ -203,10 +203,10 @@ export const Dashboard = () => {
                 return (
                   <React.Fragment key={workstream.id}>
                     <WorkstreamRow workstream={workstream} />
-                    {workstream.tracks.map((track, trackIdx) => (
+                    {workstream.tracks?.map((track, trackIdx) => (
                       <React.Fragment key={`${workstream.id}-track-${trackIdx}`}>
                         <TrackRow track={track} />
-                        {track.milestones.map((milestone, milestoneIdx) => {
+                        {track.milestones?.map((milestone, milestoneIdx) => {
                           const currentIndex = workstreamMilestoneIndex++;
                           return (
                             <MilestoneRow
