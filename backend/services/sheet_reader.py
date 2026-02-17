@@ -162,6 +162,8 @@ class SheetReader:
         
         workstreams = []
         current_ws = None
+        current_track_notes_link = None
+        current_track_notes_doc_id = None
         
         for row_idx, row in enumerate(all_values):
             # Skip empty rows
@@ -177,6 +179,9 @@ class SheetReader:
                 if ws_data:
                     current_ws = Workstream(**ws_data, milestones=[])
                     workstreams.append(current_ws)
+                    # Reset track notes state for new workstream
+                    current_track_notes_link = None
+                    current_track_notes_doc_id = None
             
             # Legacy format: column A is empty and column B contains "Workstream:"
             elif col_a == "" and len(row) > 1 and "Workstream:" in str(row[1]):
@@ -184,10 +189,35 @@ class SheetReader:
                 if ws_data:
                     current_ws = Workstream(**ws_data, milestones=[])
                     workstreams.append(current_ws)
+                    # Reset track notes state for new workstream
+                    current_track_notes_link = None
+                    current_track_notes_doc_id = None
             
             # Detect track row: Column A = "Track" (for grouping, not parsed)
             elif col_a == "Track":
-                # Track rows are just for visual grouping, skip them
+                # Extract notes link from column G (index 6) for new structure
+                if len(row) > 6 and row[6]:
+                    # Check if cell has hyperlink
+                    hyperlink = self.extract_hyperlink(settings.google_sheet_id, row_idx, 6)
+                    if hyperlink:
+                        current_track_notes_link = hyperlink
+                        current_track_notes_doc_id = self.extract_doc_id_from_url(hyperlink)
+                    elif row[6].strip().lower() != NOTES_LABEL:
+                        # Plain text link
+                        current_track_notes_link = row[6]
+                        current_track_notes_doc_id = self.extract_doc_id_from_url(row[6])
+                
+                # Fall back to column Q (index 16) for legacy structure
+                if not current_track_notes_link and len(row) > 16 and row[16]:
+                    hyperlink = self.extract_hyperlink(settings.google_sheet_id, row_idx, 16)
+                    if hyperlink:
+                        current_track_notes_link = hyperlink
+                        current_track_notes_doc_id = self.extract_doc_id_from_url(hyperlink)
+                    else:
+                        current_track_notes_link = row[16]
+                        current_track_notes_doc_id = self.extract_doc_id_from_url(row[16])
+                
+                # Track rows are just for visual grouping, skip them (don't add to milestones)
                 continue
             
             # Detect milestone row: column A = "Milestone"
@@ -215,6 +245,11 @@ class SheetReader:
                     if hyperlink:
                         notes_link = hyperlink
                     notes_doc_id = self.extract_doc_id_from_url(notes_link)
+                
+                # Fall back to track notes if milestone doesn't have its own
+                if not notes_link and current_track_notes_link:
+                    notes_link = current_track_notes_link
+                    notes_doc_id = current_track_notes_doc_id
                 
                 # Determine comments value with fallback logic
                 # New structure: Column I (index 8) for AI-generated summaries
