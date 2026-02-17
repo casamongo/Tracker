@@ -1,9 +1,10 @@
 /**
  * Main dashboard component displaying workstreams and milestones.
  */
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { RefreshCw, Play, Loader2 } from 'lucide-react';
 import { WorkstreamRow } from './WorkstreamRow';
+import { TrackRow } from './TrackRow';
 import { MilestoneRow } from './MilestoneRow';
 import { PreviewModal } from './PreviewModal';
 import { useWorkstreams } from '@/hooks/useWorkstreams';
@@ -196,19 +197,33 @@ export const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {data?.workstreams.map((workstream) => (
-                <>
-                  <WorkstreamRow key={workstream.id} workstream={workstream} />
-                  {workstream.milestones.map((milestone, idx) => (
-                    <MilestoneRow
-                      key={`${workstream.id}-${milestone.row_index}`}
-                      milestone={milestone}
-                      isEven={idx % 2 === 0}
-                      onPreview={() => handlePreviewClick(milestone, workstream.id, idx)}
-                    />
-                  ))}
-                </>
-              ))}
+              {data?.workstreams.map((workstream) => {
+                // Flatten all milestones from all tracks to maintain global index
+                const allMilestones = workstream.tracks.flatMap(track => track.milestones);
+                let globalMilestoneIndex = 0;
+                
+                return (
+                  <React.Fragment key={workstream.id}>
+                    <WorkstreamRow workstream={workstream} />
+                    {workstream.tracks.map((track, trackIdx) => (
+                      <React.Fragment key={`${workstream.id}-track-${trackIdx}`}>
+                        <TrackRow track={track} />
+                        {track.milestones.map((milestone, milestoneIdx) => {
+                          const currentIndex = globalMilestoneIndex++;
+                          return (
+                            <MilestoneRow
+                              key={`${workstream.id}-${milestone.row_index}`}
+                              milestone={milestone}
+                              isEven={milestoneIdx % 2 === 0}
+                              onPreview={() => handlePreviewClick(milestone, workstream.id, currentIndex)}
+                            />
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
