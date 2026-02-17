@@ -202,7 +202,7 @@ class SheetReader:
                     if hyperlink:
                         current_track_notes_link = hyperlink
                         current_track_notes_doc_id = self.extract_doc_id_from_url(hyperlink)
-                    elif row[6].strip().lower() != NOTES_LABEL:
+                    elif str(row[6]).strip().lower() != NOTES_LABEL:
                         # Plain text link
                         current_track_notes_link = row[6]
                         current_track_notes_doc_id = self.extract_doc_id_from_url(row[6])
