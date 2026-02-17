@@ -19,6 +19,14 @@ class Milestone(BaseModel):
     notes_doc_id: Optional[str] = None
 
 
+class Track(BaseModel):
+    """Represents a track grouping within a workstream."""
+    name: str
+    notes_link: Optional[str] = None
+    notes_doc_id: Optional[str] = None
+    milestones: List[Milestone] = []
+
+
 class Workstream(BaseModel):
     """Represents a workstream with its associated milestones."""
     id: str
@@ -29,7 +37,7 @@ class Workstream(BaseModel):
     target_quarter: str
     status: str
     okr: str
-    milestones: List[Milestone] = []
+    tracks: List[Track] = []
 
 
 class WorkstreamsResponse(BaseModel):

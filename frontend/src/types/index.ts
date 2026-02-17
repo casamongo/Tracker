@@ -15,6 +15,13 @@ export interface Milestone {
   notes_doc_id?: string;
 }
 
+export interface Track {
+  name: string;
+  notes_link?: string;
+  notes_doc_id?: string;
+  milestones: Milestone[];
+}
+
 export interface Workstream {
   id: string;
   name: string;
@@ -24,7 +31,7 @@ export interface Workstream {
   target_quarter: string;
   status: string;
   okr: string;
-  milestones: Milestone[];
+  tracks: Track[];
 }
 
 export interface WorkstreamsResponse {
