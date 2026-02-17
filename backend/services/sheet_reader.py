@@ -193,7 +193,7 @@ class SheetReader:
             # Detect track row: Column A = "Track"
             elif col_a == "Track" and current_ws is not None:
                 # Extract track name from column B (index 1)
-                track_name = row[1] if len(row) > 1 else "Untitled Track"
+                track_name = row[1] if len(row) > 1 else "Default Track"
                 
                 # Extract notes link from column G (index 6) for new structure
                 track_notes_link = None
