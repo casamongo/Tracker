@@ -198,8 +198,6 @@ export const Dashboard = () => {
             </thead>
             <tbody>
               {data?.workstreams.map((workstream) => {
-                // Flatten all milestones from all tracks to maintain global index
-                const allMilestones = workstream.tracks.flatMap(track => track.milestones);
                 let globalMilestoneIndex = 0;
                 
                 return (
