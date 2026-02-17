@@ -29,19 +29,24 @@ class Orchestrator:
         Generate updates for selected milestones within a workstream.
         
         Args:
-            workstream: The workstream containing the milestones
-            milestone_indices: List of indices within workstream.milestones to process
+            workstream: The workstream containing the tracks with milestones
+            milestone_indices: List of indices within all milestones across tracks to process
             
         Returns:
             List of generated MilestoneUpdate objects
         """
+        # Flatten all milestones from all tracks
+        all_milestones = []
+        for track in workstream.tracks:
+            all_milestones.extend(track.milestones)
+        
         updates = []
         
         for idx in milestone_indices:
-            if idx < 0 or idx >= len(workstream.milestones):
+            if idx < 0 or idx >= len(all_milestones):
                 continue
             
-            milestone = workstream.milestones[idx]
+            milestone = all_milestones[idx]
             
             # Skip if no notes doc
             if not milestone.notes_doc_id:
@@ -79,11 +84,16 @@ class Orchestrator:
         all_updates = []
         
         for workstream in workstreams:
-            if not workstream.milestones:
+            # Flatten all milestones from all tracks
+            all_milestones = []
+            for track in workstream.tracks:
+                all_milestones.extend(track.milestones)
+            
+            if not all_milestones:
                 continue
             
             # Generate updates for all milestones in this workstream
-            milestone_indices = list(range(len(workstream.milestones)))
+            milestone_indices = list(range(len(all_milestones)))
             updates = await self.generate_updates_for_workstream(workstream, milestone_indices)
             all_updates.extend(updates)
         

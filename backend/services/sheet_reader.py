@@ -8,7 +8,7 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from typing import List, Dict, Optional
 from config import settings
-from models.workstream import Workstream, Milestone
+from models.workstream import Workstream, Milestone, Track
 
 
 # Google API scopes
@@ -145,13 +145,13 @@ class SheetReader:
         
         Supports dynamic hierarchy detection based on Column A values:
         - Column A = "Workstream" → Start new workstream
-        - Column A = "Track" → Track row (for grouping, not parsed)
-        - Column A = "Milestone" → Add milestone to current workstream
+        - Column A = "Track" → Create track grouping within workstream
+        - Column A = "Milestone" → Add milestone to current track
         
         Also supports legacy format where Column A is empty and Column B has "Workstream:"
         
         Returns:
-            List of Workstream objects with nested milestones
+            List of Workstream objects with nested tracks containing milestones
         """
         # Open the spreadsheet
         spreadsheet = self.gc.open_by_key(settings.google_sheet_id)
@@ -162,8 +162,7 @@ class SheetReader:
         
         workstreams = []
         current_ws = None
-        current_track_notes_link = None
-        current_track_notes_doc_id = None
+        current_track = None
         
         for row_idx, row in enumerate(all_values):
             # Skip empty rows
@@ -177,51 +176,71 @@ class SheetReader:
             if col_a == "Workstream" and len(row) > 1:
                 ws_data = self.parse_workstream_header(row[1])
                 if ws_data:
-                    current_ws = Workstream(**ws_data, milestones=[])
+                    current_ws = Workstream(**ws_data, tracks=[])
                     workstreams.append(current_ws)
-                    # Reset track notes state for new workstream
-                    current_track_notes_link = None
-                    current_track_notes_doc_id = None
+                    # Reset track state for new workstream
+                    current_track = None
             
             # Legacy format: column A is empty and column B contains "Workstream:"
             elif col_a == "" and len(row) > 1 and "Workstream:" in str(row[1]):
                 ws_data = self.parse_workstream_header(row[1])
                 if ws_data:
-                    current_ws = Workstream(**ws_data, milestones=[])
+                    current_ws = Workstream(**ws_data, tracks=[])
                     workstreams.append(current_ws)
-                    # Reset track notes state for new workstream
-                    current_track_notes_link = None
-                    current_track_notes_doc_id = None
+                    # Reset track state for new workstream
+                    current_track = None
             
-            # Detect track row: Column A = "Track" (for grouping, not parsed)
-            elif col_a == "Track":
+            # Detect track row: Column A = "Track"
+            elif col_a == "Track" and current_ws is not None:
+                # Extract track name from column B (index 1)
+                track_name = row[1] if len(row) > 1 else "Untitled Track"
+                
                 # Extract notes link from column G (index 6) for new structure
+                track_notes_link = None
+                track_notes_doc_id = None
+                
                 if len(row) > 6 and row[6]:
                     # Check if cell has hyperlink
                     hyperlink = self.extract_hyperlink(settings.google_sheet_id, row_idx, 6)
                     if hyperlink:
-                        current_track_notes_link = hyperlink
-                        current_track_notes_doc_id = self.extract_doc_id_from_url(hyperlink)
+                        track_notes_link = hyperlink
+                        track_notes_doc_id = self.extract_doc_id_from_url(hyperlink)
                     elif str(row[6]).strip().lower() != NOTES_LABEL:
                         # Plain text link
-                        current_track_notes_link = row[6]
-                        current_track_notes_doc_id = self.extract_doc_id_from_url(row[6])
+                        track_notes_link = row[6]
+                        track_notes_doc_id = self.extract_doc_id_from_url(row[6])
                 
                 # Fall back to column Q (index 16) for legacy structure
-                if not current_track_notes_link and len(row) > 16 and row[16]:
+                if not track_notes_link and len(row) > 16 and row[16]:
                     hyperlink = self.extract_hyperlink(settings.google_sheet_id, row_idx, 16)
                     if hyperlink:
-                        current_track_notes_link = hyperlink
-                        current_track_notes_doc_id = self.extract_doc_id_from_url(hyperlink)
+                        track_notes_link = hyperlink
+                        track_notes_doc_id = self.extract_doc_id_from_url(hyperlink)
                     else:
-                        current_track_notes_link = row[16]
-                        current_track_notes_doc_id = self.extract_doc_id_from_url(row[16])
+                        track_notes_link = row[16]
+                        track_notes_doc_id = self.extract_doc_id_from_url(row[16])
                 
-                # Track rows are just for visual grouping, skip them (don't add to milestones)
-                continue
+                # Create new Track and add to current workstream
+                current_track = Track(
+                    name=track_name,
+                    notes_link=track_notes_link,
+                    notes_doc_id=track_notes_doc_id,
+                    milestones=[]
+                )
+                current_ws.tracks.append(current_track)
             
             # Detect milestone row: column A = "Milestone"
             elif col_a == "Milestone" and current_ws is not None:
+                # If no track exists yet, create a default track
+                if current_track is None:
+                    current_track = Track(
+                        name="Default Track",
+                        notes_link=None,
+                        notes_doc_id=None,
+                        milestones=[]
+                    )
+                    current_ws.tracks.append(current_track)
+                
                 # Extract notes link - try column G (index 6) first for new structure
                 notes_link = None
                 notes_doc_id = None
@@ -247,9 +266,9 @@ class SheetReader:
                     notes_doc_id = self.extract_doc_id_from_url(notes_link)
                 
                 # Fall back to track notes if milestone doesn't have its own
-                if not notes_link and current_track_notes_link:
-                    notes_link = current_track_notes_link
-                    notes_doc_id = current_track_notes_doc_id
+                if not notes_link and current_track.notes_link:
+                    notes_link = current_track.notes_link
+                    notes_doc_id = current_track.notes_doc_id
                 
                 # Determine comments value with fallback logic
                 # New structure: Column I (index 8) for AI-generated summaries
@@ -272,7 +291,7 @@ class SheetReader:
                     notes_link=notes_link,
                     notes_doc_id=notes_doc_id
                 )
-                current_ws.milestones.append(milestone)
+                current_track.milestones.append(milestone)
         
         return workstreams
 
