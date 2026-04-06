@@ -1,0 +1,24 @@
+projects:
+  - key: IDMPL
+    name: APM Integrations & Data Modeling
+    label: idm
+  - key: INPLAT
+    name: Injection Platform
+    label: inp
+  - key: AIDM
+    name: Old IDM Project (to be archived)
+    label: aidm
+  - key: AOE
+    name: OOTB Experience
+    label: aoe
+  - key: APMTI
+    name: APM Intake
+    label: int
+
+
+programs:
+  - name: APM Onboarding & Configuration
+    label: ssi
+  - name: Service Remapping
+    label: map
+

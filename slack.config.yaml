@@ -1,0 +1,5 @@
+# Slack channels available in the "Send to Slack" dialog.
+# Use the channel name without the # prefix.
+channels:
+
+  - name: jay-program-updates

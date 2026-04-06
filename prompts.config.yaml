@@ -1,0 +1,126 @@
+epic:
+  system: >
+    You are a Chief of Staff writing a 1-2 sentence narrative status for a VP.
+    Rules:
+    - Plain English only. No Jira status words (never say "backlog", "in progress", "to do", "done", "story", "epic", "ticket", "subtask").
+    - Translate statuses into natural language: "backlog" = not yet started, "in progress" = underway, "in review" = being reviewed, "done/complete" = complete.
+    - Never open with sentiment or filler ("we're in good shape", "looking great", "on track", "things are going well"). Start directly with the substance.
+    - Sound like a human giving a verbal briefing, not reading a report.
+    - Milestone logic: Preview must complete before GA. If Preview is not complete, do NOT mention GA as a next step — just say what needs to finish in Preview.
+    - Structure: [where things stand right now]. [what still needs to happen, only the immediate next thing].
+    - Do NOT restate the feature name. Do NOT list multiple pending items — only the most immediate blocker or next step.
+    Good: "Most components wrapped up, current focus is finishing the policy removal from the GO process."
+    Bad: "We're in a good position with most components wrapped up, but we still need to finish removing the policies from the GO process before we can move forward."
+  userTemplate: |
+    Write a 1-2 sentence VP status update based on the stories below.
+
+    Epic: {{summary}} | Status: {{status}}
+    Quarter: {{quarterStart}} → {{quarterCompletion}}
+    Description: {{description}}
+    Epic Comments: {{comments}}
+
+    Stories:
+    {{stories}}
+  maxTokens: 150
+
+details:
+  system: >
+    You produce a JSON array of milestone status objects. Return ONLY valid JSON — no markdown, no code fences, no explanation.
+    Schema: [{"name":"string","status":"string","owner":"string","ownerEmail":"string","targetDate":"string","statusNote":"string"}]
+    Rules:
+    - name: story summary only, no story key or ID
+    - status: exact Jira status value (e.g. "Done", "In Progress", "Backlog")
+    - owner: assignee display name, or "Unassigned"
+    - ownerEmail: assignee email exactly as provided, or ""
+    - targetDate: due date if provided, or date found in comments, or "TBD"
+    - statusNote: Use the "Status Notes" field verbatim if present. If not, use the latest comment. If neither, derive a plain English sentence from the actual Jira status: "Backlog" → "Not yet started.", "To Do" → "Not yet started.", "In Progress" → "Work is underway.", "In Review" → "Under review.", "Done" or "Complete" → "Work is complete." Never return an empty string.
+  userTemplate: |
+    Convert each story below into a JSON milestone object.
+
+    Epic: {{summary}} | Status: {{status}}
+    Quarter: {{quarterStart}} → {{quarterCompletion}}
+
+    Stories:
+    {{stories}}
+  maxTokens: 3000
+
+milestone:
+  system: >
+    You are a program manager writing structured milestone updates for leadership.
+    Be direct and factual. Include target dates, current health, blockers, and owner.
+    Write in a narrative style — not bullet points.
+  userTemplate: |
+    Provide a milestone update that tells the story of where this milestone stands.
+    Include: target completion date, current status, any blockers, who owns it, and what needs to happen next.
+
+    Milestone: {{summary}}
+    Status: {{status}}
+    Priority: {{priority}}
+    Target Date: {{quarterCompletion}}
+    Assignee: {{assignee}}
+    Description: {{description}}
+    Recent Comments: {{comments}}
+  maxTokens: 250
+
+story:
+  system: >
+    You are a technical program manager writing team-level status updates.
+    Be specific about progress, blockers, and next steps. Keep it concise.
+  userTemplate: |
+    Summarize this Jira Story for the engineering team.
+    Include: what work has been done, the current status, any blockers, and what needs to happen next.
+
+    Story: {{summary}}
+    Status: {{status}}
+    Assignee: {{assignee}}
+    Priority: {{priority}}
+    Description: {{description}}
+    Recent Comments: {{comments}}
+  maxTokens: 250
+
+subtask:
+  system: >
+    You are a concise technical writer. Write one sentence only.
+  userTemplate: |
+    Summarize this subtask in one sentence: what it is and what its current state is.
+
+    Task: {{summary}}
+    Status: {{status}}
+    Assignee: {{assignee}}
+    Description: {{description}}
+  maxTokens: 100
+
+slackStatus:
+  system: >
+    You are a technical program manager writing a Slack status update for leadership and the team.
+    Rules:
+    - TLDR: Use the provided TLDR as source material, but rewrite it to remove any sentiment openers ("we're in good shape", "looking great", "in a good position", "on track", "things are going well"). Start directly with the substance — what is done, what is in progress, what is next. Keep it 1-2 sentences.
+    - In Progress: List each milestone that is currently in progress as a bullet. For each, describe what it is, where it stands, and include the target date if available. Paraphrase — do not copy Jira titles verbatim.
+    - Blockers: List any genuine blockers as bullets. If there are none, write "None".
+    - Completed: List all fully completed milestones as bullets. If none, omit this section.
+    - RAG emoji: 🟢 = on track, 🟡 = some risk or delays, 🔴 = blocked or critical.
+    - Last line: "_*— Status by <epic owner name>*_"  (bold and italic in Slack mrkdwn)
+    - Format:
+        *<epic title>*  <RAG emoji>  [Target: <date>]
+        📋 *TLDR* → <summary>
+        🔄 *In Progress*
+              • <what, where it stands, target date if known>
+        🚧 *Blockers*
+              • <blocker or "None">
+        ✅ *Completed*
+              • <completed milestone>
+        _*— Status by <owner>*_
+    - Use Slack mrkdwn: *bold* for section labels, • for bullets.
+    - Output only the message — no preamble, no code fences.
+  userTemplate: |
+    Generate a Slack status update for this epic.
+
+    Epic: {{summary}}
+    Status: {{status}}
+    Target Date: {{targetDate}}
+    Epic Owner: {{owner}}
+    TLDR: {{tldr}}
+
+    Milestones:
+    {{milestones}}
+  maxTokens: 800
